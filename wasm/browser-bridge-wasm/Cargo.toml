@@ -16,6 +16,9 @@ regex = "1"
 console_error_panic_hook = "0.1"
 getrandom = { version = "0.2", features = ["js"] }
 
+[build-dependencies]
+prost-build = "0.13"
+
 [profile.release]
 opt-level = "z"
 lto = true

@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package browser_bridge;
+
+// A request from the MCP server to the browser extension.
+message BrowserRequest {
+  string id = 1;
+  string action = 2;
+  // Arbitrary JSON payload, encoded as UTF-8 bytes.
+  bytes payload = 3;
+}
+
+// Union type for all messages sent from the extension to the server.
+message ExtensionMessage {
+  oneof variant {
+    ResponseMessage response = 1;
+    KeepaliveMessage keepalive = 2;
+    HotReloadMessage hot_reload = 3;
+    NewEmailMessage new_email = 4;
+  }
+}
+
+message ResponseMessage {
+  string id = 1;
+  // Arbitrary JSON payload, encoded as UTF-8 bytes.
+  bytes payload = 2;
+}
+
+message KeepaliveMessage {
+  // Empty message — presence in the oneof is the signal.
+}
+
+message HotReloadMessage {
+  repeated string files = 1;
+}
+
+message NewEmailMessage {
+  EmailData email = 1;
+}
+
+message EmailData {
+  // Optional fields use wrapper messages for null vs absent distinction.
+  optional string subject = 1;
+  optional string sender = 2;
+  optional string body_preview = 3;
+}
+
+// Token extracted from a browser session.
+message TokenMessage {
+  string platform = 1;
+  string token_type = 2;
+  string token = 3;
+  optional string url = 4;
+  uint64 timestamp = 5;
+}
