@@ -1,0 +1,16 @@
+{
+  "name": "browser-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "components/bb/*",
+    "bases/bb/*",
+    "projects/*"
+  ],
+  "scripts": {
+    "build:purs": "npx spago build",
+    "test:purs": "npx spago test",
+    "clean": "rm -rf output/ dist/ pkg/ node_modules/ .spago"
+  },
+  "devDependencies": {}
+}

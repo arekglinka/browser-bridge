@@ -1,0 +1,35 @@
+package:
+  name: browser-bridge
+  dependencies:
+    - prelude
+    - effect
+    - console
+    - aff
+    - maybe
+    - either
+    - strings
+    - arrays
+    - newtype
+    - foreign
+    - nullable
+    - exceptions
+    - aff-promise
+    - json
+    - encoding
+    - node-buffer
+    - node-process
+    - node-streams
+    - node-http
+    - node-net
+    - node-child-process
+    - args
+    - console
+  test:
+    main: Test.Main
+    dependencies:
+      - spec
+      - spec-discovery
+workspace:
+  packageSet:
+    registry: 73.3.0
+  extraPackages: {}
