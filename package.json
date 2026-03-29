@@ -8,9 +8,13 @@
     "projects/*"
   ],
   "scripts": {
+    "build:wasm": "cd wasm/browser-bridge-wasm && ~/.cargo/bin/wasm-pack build --target web --out-dir pkg",
+    "build:ps": "npx spago build",
+    "build:ffi": "esbuild ffi/interceptor.js --bundle --format=iife --outfile=dist/interceptor.js && esbuild ffi/bridge.js --bundle --format=iife --outfile=dist/bridge.js",
+    "build": "npm run build:wasm && npm run build:ps && npm run build:ffi",
     "build:purs": "npx spago build",
     "test:purs": "npx spago test",
-    "clean": "rm -rf output/ dist/ pkg/ node_modules/ .spago"
+    "clean": "rm -rf output/ wasm/browser-bridge-wasm/pkg/ dist/ node_modules/ .spago"
   },
   "devDependencies": {}
 }

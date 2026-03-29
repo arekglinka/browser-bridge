@@ -1,0 +1,17 @@
+package:
+  name: extension-client
+  dependencies:
+    - prelude
+    - effect
+    - aff
+    - maybe
+    - either
+    - console
+    - foreign
+    - nullable
+    - exceptions
+    - strings
+    - arrays
+    - newtype
+    - protocol
+    - aff-promise

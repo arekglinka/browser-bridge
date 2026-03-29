@@ -22,7 +22,6 @@ package:
     - node-http
     - node-net
     - node-child-process
-    - args
     - console
   test:
     main: Test.Main

@@ -1,0 +1,8 @@
+package:
+  name: interceptor
+  dependencies:
+    - prelude
+    - maybe
+    - either
+    - strings
+    - arrays

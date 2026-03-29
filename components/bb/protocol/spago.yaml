@@ -1,0 +1,6 @@
+package:
+  name: protocol
+  dependencies:
+    - prelude
+    - maybe
+    - newtype

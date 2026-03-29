@@ -1,0 +1,17 @@
+{
+  "name": "browser-bridge",
+  "version": "0.1.0",
+  "description": "Standalone browser bridge library with PureScript logic, Rust/WASM hot paths, and vanilla JS FFI",
+  "main": "../output/BrowserBridge/index.js",
+  "type": "module",
+  "files": [
+    "../output/BrowserBridge/",
+    "../output/Protocol/",
+    "../output/Server/",
+    "../output/ExtensionClient/",
+    "../output/TokenParsing/",
+    "../wasm/browser-bridge-wasm/pkg/"
+  ],
+  "keywords": ["chrome-extension", "websocket", "wasm", "purescript"],
+  "license": "MIT"
+}

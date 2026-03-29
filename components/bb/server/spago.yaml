@@ -1,0 +1,16 @@
+package:
+  name: server
+  dependencies:
+    - prelude
+    - effect
+    - aff
+    - maybe
+    - either
+    - arrays
+    - console
+    - foreign
+    - node-buffer
+    - strings
+    - newtype
+    - exceptions
+    - protocol

@@ -1,0 +1,10 @@
+package:
+  name: token-parsing
+  dependencies:
+    - prelude
+    - effect
+    - aff
+    - maybe
+    - either
+    - exceptions
+    - aff-promise

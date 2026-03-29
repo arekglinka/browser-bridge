@@ -1,0 +1,8 @@
+package:
+  name: browser-bridge
+  dependencies:
+    - prelude
+    - protocol
+    - server
+    - extension-client
+    - serialization

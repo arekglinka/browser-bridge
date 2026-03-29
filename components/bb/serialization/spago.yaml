@@ -1,0 +1,11 @@
+package:
+  name: serialization
+  dependencies:
+    - prelude
+    - effect
+    - aff
+    - maybe
+    - either
+    - exceptions
+    - aff-promise
+    - foreign

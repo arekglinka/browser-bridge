@@ -1,0 +1,14 @@
+package:
+  name: cli
+  dependencies:
+    - prelude
+    - effect
+    - console
+    - aff
+    - maybe
+    - either
+    - strings
+    - arrays
+    - foreign
+    - server
+    - protocol
