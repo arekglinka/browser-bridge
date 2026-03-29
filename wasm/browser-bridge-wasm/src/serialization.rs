@@ -72,11 +72,11 @@ fn bytes_to_json(data: &[u8]) -> serde_json::Value {
 }
 
 #[wasm_bindgen]
-pub fn serialize_message(msg_type: &str, msg_json: &str) -> Vec<u8> {
+pub fn serialize_message(msg_type: &str, msg_json: &str) -> Result<Vec<u8>, JsValue> {
     match msg_type {
         "BrowserRequest" => {
             let req: JsonBrowserRequest =
-                serde_json::from_str(msg_json).expect("invalid JSON for BrowserRequest");
+                serde_json::from_str(msg_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
             let proto = BrowserRequest {
                 id: req.id,
                 action: req.action,
@@ -86,7 +86,7 @@ pub fn serialize_message(msg_type: &str, msg_json: &str) -> Vec<u8> {
         }
         "ExtensionMessage" => {
             let msg: JsonExtensionMessage =
-                serde_json::from_str(msg_json).expect("invalid JSON for ExtensionMessage");
+                serde_json::from_str(msg_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
             let proto = match msg {
                 JsonExtensionMessage::Response { id, payload } => ExtensionMessage {
                     variant: Some(proto::extension_message::Variant::Response(
@@ -124,7 +124,7 @@ pub fn serialize_message(msg_type: &str, msg_json: &str) -> Vec<u8> {
         }
         "TokenMessage" => {
             let tok: JsonTokenMessage =
-                serde_json::from_str(msg_json).expect("invalid JSON for TokenMessage");
+                serde_json::from_str(msg_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
             let proto = TokenMessage {
                 platform: tok.platform,
                 token_type: tok.token_type,
@@ -134,21 +134,24 @@ pub fn serialize_message(msg_type: &str, msg_json: &str) -> Vec<u8> {
             };
             encode_with_tag(TAG_TOKEN_MESSAGE, &proto)
         }
-        _ => panic!("unknown message type: {}", msg_type),
+        _ => Err(JsValue::from_str(&format!(
+            "unknown message type: {}",
+            msg_type
+        ))),
     }
 }
 
-fn encode_with_tag(tag: u8, msg: &impl prost::Message) -> Vec<u8> {
+fn encode_with_tag(tag: u8, msg: &impl prost::Message) -> Result<Vec<u8>, JsValue> {
     let mut out = Vec::with_capacity(1 + msg.encoded_len());
     out.push(tag);
     msg.encode_raw(&mut out);
-    out
+    Ok(out)
 }
 
 #[wasm_bindgen]
-pub fn deserialize_message(data: &[u8]) -> String {
+pub fn deserialize_message(data: &[u8]) -> Result<String, JsValue> {
     if data.is_empty() {
-        return r#"{"error":"empty data"}"#.to_string();
+        return Ok(r#"{"error":"empty data"}"#.to_string());
     }
     let tag = data[0];
     let payload = &data[1..];
@@ -156,23 +159,23 @@ pub fn deserialize_message(data: &[u8]) -> String {
         TAG_BROWSER_REQUEST => decode_browser_request(payload),
         TAG_EXTENSION_MESSAGE => decode_extension_message(payload),
         TAG_TOKEN_MESSAGE => decode_token_message(payload),
-        _ => r#"{"error":"unknown message format"}"#.to_string(),
+        _ => Ok(r#"{"error":"unknown message format"}"#.to_string()),
     }
 }
 
-fn decode_browser_request(data: &[u8]) -> String {
-    let req = BrowserRequest::decode(data).expect("failed to decode BrowserRequest");
+fn decode_browser_request(data: &[u8]) -> Result<String, JsValue> {
+    let req = BrowserRequest::decode(data).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let json = serde_json::json!({
         "type": "BrowserRequest",
         "id": req.id,
         "action": req.action,
         "payload": bytes_to_json(&req.payload),
     });
-    serde_json::to_string(&json).expect("JSON serialize failed")
+    serde_json::to_string(&json).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
-fn decode_extension_message(data: &[u8]) -> String {
-    let ext = ExtensionMessage::decode(data).expect("failed to decode ExtensionMessage");
+fn decode_extension_message(data: &[u8]) -> Result<String, JsValue> {
+    let ext = ExtensionMessage::decode(data).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let json = match ext.variant {
         Some(proto::extension_message::Variant::Response(r)) => serde_json::json!({
             "type": "response",
@@ -204,11 +207,11 @@ fn decode_extension_message(data: &[u8]) -> String {
         }
         None => serde_json::json!({ "type": "unknown", "variant": "none" }),
     };
-    serde_json::to_string(&json).expect("JSON serialize failed")
+    serde_json::to_string(&json).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
-fn decode_token_message(data: &[u8]) -> String {
-    let tok = TokenMessage::decode(data).expect("failed to decode TokenMessage");
+fn decode_token_message(data: &[u8]) -> Result<String, JsValue> {
+    let tok = TokenMessage::decode(data).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let mut json = serde_json::json!({
         "type": "TokenMessage",
         "platform": tok.platform,
@@ -219,7 +222,7 @@ fn decode_token_message(data: &[u8]) -> String {
     if let Some(url) = tok.url {
         json["url"] = serde_json::Value::String(url);
     }
-    serde_json::to_string(&json).expect("JSON serialize failed")
+    serde_json::to_string(&json).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 #[cfg(test)]
@@ -229,8 +232,8 @@ mod tests {
     #[test]
     fn roundtrip_browser_request() {
         let json = r#"{"id":"abc-123","action":"evaluate","payload":{"code":"document.title"}}"#;
-        let bytes = serialize_message("BrowserRequest", json);
-        let result = deserialize_message(&bytes);
+        let bytes = serialize_message("BrowserRequest", json).unwrap();
+        let result = deserialize_message(&bytes).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
         assert_eq!(parsed["type"], "BrowserRequest");
         assert_eq!(parsed["id"], "abc-123");
@@ -241,8 +244,8 @@ mod tests {
     #[test]
     fn roundtrip_browser_request_empty_payload() {
         let json = r#"{"id":"x","action":"ping","payload":null}"#;
-        let bytes = serialize_message("BrowserRequest", json);
-        let result = deserialize_message(&bytes);
+        let bytes = serialize_message("BrowserRequest", json).unwrap();
+        let result = deserialize_message(&bytes).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
         assert_eq!(parsed["id"], "x");
         assert_eq!(parsed["action"], "ping");
@@ -252,8 +255,8 @@ mod tests {
     #[test]
     fn roundtrip_extension_response() {
         let json = r#"{"type":"response","id":"r1","payload":{"count":5}}"#;
-        let bytes = serialize_message("ExtensionMessage", json);
-        let result = deserialize_message(&bytes);
+        let bytes = serialize_message("ExtensionMessage", json).unwrap();
+        let result = deserialize_message(&bytes).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
         assert_eq!(parsed["type"], "response");
         assert_eq!(parsed["id"], "r1");
@@ -263,8 +266,8 @@ mod tests {
     #[test]
     fn roundtrip_extension_ping() {
         let json = r#"{"type":"ping"}"#;
-        let bytes = serialize_message("ExtensionMessage", json);
-        let result = deserialize_message(&bytes);
+        let bytes = serialize_message("ExtensionMessage", json).unwrap();
+        let result = deserialize_message(&bytes).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
         assert_eq!(parsed["type"], "ping");
     }
@@ -272,8 +275,8 @@ mod tests {
     #[test]
     fn roundtrip_extension_hot_reload() {
         let json = r#"{"type":"hot-reload","files":["a.js","b.js"]}"#;
-        let bytes = serialize_message("ExtensionMessage", json);
-        let result = deserialize_message(&bytes);
+        let bytes = serialize_message("ExtensionMessage", json).unwrap();
+        let result = deserialize_message(&bytes).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
         assert_eq!(parsed["type"], "hot-reload");
         assert_eq!(parsed["files"][0], "a.js");
@@ -283,8 +286,8 @@ mod tests {
     #[test]
     fn roundtrip_extension_hot_reload_no_files() {
         let json = r#"{"type":"hot-reload"}"#;
-        let bytes = serialize_message("ExtensionMessage", json);
-        let result = deserialize_message(&bytes);
+        let bytes = serialize_message("ExtensionMessage", json).unwrap();
+        let result = deserialize_message(&bytes).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
         assert_eq!(parsed["type"], "hot-reload");
         assert!(parsed["files"].as_array().unwrap().is_empty());
@@ -293,8 +296,8 @@ mod tests {
     #[test]
     fn roundtrip_extension_new_email() {
         let json = r#"{"type":"new_email","email":{"subject":"Hello","sender":"bob@test.com","body_preview":"Hi there"}}"#;
-        let bytes = serialize_message("ExtensionMessage", json);
-        let result = deserialize_message(&bytes);
+        let bytes = serialize_message("ExtensionMessage", json).unwrap();
+        let result = deserialize_message(&bytes).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
         assert_eq!(parsed["type"], "new_email");
         assert_eq!(parsed["email"]["subject"], "Hello");
@@ -305,8 +308,8 @@ mod tests {
     #[test]
     fn roundtrip_extension_new_email_null_fields() {
         let json = r#"{"type":"new_email","email":{"subject":null,"sender":null}}"#;
-        let bytes = serialize_message("ExtensionMessage", json);
-        let result = deserialize_message(&bytes);
+        let bytes = serialize_message("ExtensionMessage", json).unwrap();
+        let result = deserialize_message(&bytes).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
         assert_eq!(parsed["type"], "new_email");
         assert!(parsed["email"]["subject"].is_null());
@@ -316,8 +319,8 @@ mod tests {
     #[test]
     fn roundtrip_token_message() {
         let json = r#"{"platform":"gmail","tokenType":"Bearer","token":"ya29.xxx","url":"https://mail.google.com","timestamp":1700000000}"#;
-        let bytes = serialize_message("TokenMessage", json);
-        let result = deserialize_message(&bytes);
+        let bytes = serialize_message("TokenMessage", json).unwrap();
+        let result = deserialize_message(&bytes).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
         assert_eq!(parsed["type"], "TokenMessage");
         assert_eq!(parsed["platform"], "gmail");
@@ -330,8 +333,8 @@ mod tests {
     #[test]
     fn roundtrip_token_message_no_url() {
         let json = r#"{"platform":"gmail","tokenType":"Bearer","token":"ya29.xxx","timestamp":1700000000}"#;
-        let bytes = serialize_message("TokenMessage", json);
-        let result = deserialize_message(&bytes);
+        let bytes = serialize_message("TokenMessage", json).unwrap();
+        let result = deserialize_message(&bytes).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&result).unwrap();
         assert_eq!(parsed["platform"], "gmail");
         assert!(!parsed["url"].is_null() == false, "url should be absent");
@@ -339,13 +342,13 @@ mod tests {
 
     #[test]
     fn deserialize_unknown_returns_error() {
-        let result = deserialize_message(&[0xFF, 0xFF]);
+        let result = deserialize_message(&[0xFF, 0xFF]).unwrap();
         assert!(result.contains("error"));
     }
 
     #[test]
     fn deserialize_empty_returns_error() {
-        let result = deserialize_message(&[]);
+        let result = deserialize_message(&[]).unwrap();
         assert!(result.contains("error"));
     }
 

@@ -1,4 +1,4 @@
-export const entryToForeign = function(entry) {
+export function entryToForeign(entry) {
   var obj = {};
   obj.platform = entry.platform;
   obj.token = entry.token;
@@ -11,9 +11,9 @@ export const entryToForeign = function(entry) {
     obj.expiresAt = entry.expiresAt;
   }
   return obj;
-};
+}
 
-export const storeTokenImpl = function(entry) {
+export function storeTokenImpl(entry) {
   return function() {
     return new Promise(function(resolve, reject) {
       chrome.storage.local.get("auth_tokens", function(data) {
@@ -29,9 +29,9 @@ export const storeTokenImpl = function(entry) {
       });
     });
   };
-};
+}
 
-export const getTokenImpl = function(platform) {
+export function getTokenImpl(platform) {
   return function() {
     return new Promise(function(resolve, reject) {
       chrome.storage.local.get("auth_tokens", function(data) {
@@ -44,9 +44,9 @@ export const getTokenImpl = function(platform) {
       });
     });
   };
-};
+}
 
-export const getAllTokensImpl = function() {
+export function getAllTokensImpl() {
   return function() {
     return new Promise(function(resolve, reject) {
       chrome.storage.local.get("auth_tokens", function(data) {
@@ -59,9 +59,9 @@ export const getAllTokensImpl = function() {
       });
     });
   };
-};
+}
 
-export const removeTokenImpl = function(platform) {
+export function removeTokenImpl(platform) {
   return function() {
     return new Promise(function(resolve, reject) {
       chrome.storage.local.get("auth_tokens", function(data) {
@@ -81,8 +81,8 @@ export const removeTokenImpl = function(platform) {
       });
     });
   };
-};
+}
 
-export const isNull = function(f) {
+export function isNull(f) {
   return f === null || f === undefined;
-};
+}

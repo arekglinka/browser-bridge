@@ -1,4 +1,4 @@
-module Cli.Main where
+module Cli.Main (main) where
 
 import Prelude
 import Effect (Effect)

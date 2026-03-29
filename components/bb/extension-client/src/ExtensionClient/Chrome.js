@@ -1,26 +1,26 @@
 "use strict";
 
-export const connectWebSocket = function(url) {
+export function connectWebSocket(url) {
   return function() {
     return new WebSocket(url);
   };
-};
+}
 
-export const wsSend = function(ws) {
+export function wsSend(ws) {
   return function(data) {
     return function() {
       ws.send(data);
     };
   };
-};
+}
 
-export const wsIsOpen = function(ws) {
+export function wsIsOpen(ws) {
   return function() {
     return ws.readyState === WebSocket.OPEN;
   };
-};
+}
 
-export const wsOnMessage = function(ws) {
+export function wsOnMessage(ws) {
   return function(callback) {
     return function() {
       ws.onmessage = function(event) {
@@ -28,9 +28,9 @@ export const wsOnMessage = function(ws) {
       };
     };
   };
-};
+}
 
-export const wsOnClose = function(ws) {
+export function wsOnClose(ws) {
   return function(callback) {
     return function() {
       ws.onclose = function(event) {
@@ -38,21 +38,21 @@ export const wsOnClose = function(ws) {
       };
     };
   };
-};
+}
 
-export const wsClose = function(ws) {
+export function wsClose(ws) {
   return function() {
     ws.close();
   };
-};
+}
 
-export const runtimeSendMessageImpl = function(message) {
+export function runtimeSendMessageImpl(message) {
   return function() {
     return chrome.runtime.sendMessage(message);
   };
-};
+}
 
-export const runtimeOnMessageAddListener = function(callback) {
+export function runtimeOnMessageAddListener(callback) {
   return function() {
     chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       var sendResponsePS = function(response) {
@@ -64,22 +64,22 @@ export const runtimeOnMessageAddListener = function(callback) {
       return callback(message)(sender)(sendResponsePS)();
     });
   };
-};
+}
 
-export const runtimeGetURL = function(path) {
+export function runtimeGetURL(path) {
   return function() {
     return chrome.runtime.getURL(path);
   };
-};
+}
 
-export const scriptingExecuteScriptImpl = function(config) {
+export function scriptingExecuteScriptImpl(config) {
   return function() {
     return chrome.scripting.executeScript(config);
   };
-};
+}
 
-export const cookiesGetImpl = function(details) {
+export function cookiesGetImpl(details) {
   return function() {
     return chrome.cookies.get(details);
   };
-};
+}
