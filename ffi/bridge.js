@@ -22,7 +22,7 @@
   });
 
   if (location.hostname.indexOf("slack") !== -1) {
-    var origins = [location.origin, "https://app.slack.com", "https://gs-systematic.slack.com"];
+    var origins = [location.origin, "https://app.slack.com"];
     var seen = Object.create(null);
     var attempts = 0;
 

@@ -1,6 +1,6 @@
 -- | Message type definitions matching the browser-bridge protobuf schema.
 -- |
--- | These types model the wire protocol between the MCP server and the
+-- | These types model the wire protocol between the desktop server and the
 -- | browser extension. All types are pure data — no Effect or FFI.
 -- |
 -- | See proto/messages.proto for the canonical protobuf definitions.
@@ -40,7 +40,7 @@ mkTimestamp = wrap
 
 -- ── Browser Request (server → extension) ───────────────────────────
 
--- | A request from the MCP server to the browser extension.
+-- | A request from the desktop server to the browser extension.
 -- | Corresponds to proto `BrowserRequest`.
 newtype BrowserRequest = BrowserRequest
   { id      :: String

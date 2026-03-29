@@ -4,7 +4,7 @@ Bidirectional communication between a desktop server and a Chrome Extension, bui
 
 ## Overview
 
-Browser Bridge connects a desktop WebSocket server to a Chrome Extension through a typed, protobuf-backed message protocol. The server sends actions to the extension (evaluate JavaScript, click elements, extract data), and the extension responds with results, heartbeat signals, or captured auth tokens. Everything flows through a single WebSocket connection with request/response correlation and automatic timeouts.
+Browser Bridge connects a desktop WebSocket server to a Chrome Extension through a typed, protobuf-backed message protocol. The server sends arbitrary actions to the extension via a generic `BrowserRequest` schema, and the extension responds with results, heartbeat signals, or captured auth tokens. Everything flows through a single WebSocket connection with request/response correlation and automatic timeouts.
 
 The stack is deliberately narrow: PureScript handles all application logic, Rust compiled to WASM handles the hot paths (regex-based token extraction and protobuf serialization), and vanilla JavaScript provides thin FFI bindings to Chrome Extension APIs and Bun's native WebSocket server. No TypeScript, no bundler frameworks, no transpilation. The JS layer is a handful of IIFE files that either wrap Chrome APIs or run as content scripts.
 
@@ -32,9 +32,8 @@ The workspace follows the Polylith pattern, adapted for a PureScript/WASM/JS sta
                  |          |
                  v          v
              interceptor  (router, hot-reload)
-                 |
-                 v
-          token-parsing  ──→  serialization
+
+          token-parsing    serialization
                  |                |
                  v                v
             WASM (Rust)     WASM (Rust)
@@ -45,7 +44,7 @@ Dependencies flow downward. No component reaches upward to depend on a higher-le
 - **protocol** has zero runtime dependencies. It defines pure data types only.
 - **server** depends on protocol. It uses protocol types for message routing but not serialization or token-parsing.
 - **extension-client** depends on protocol. It wraps Chrome Extension APIs and token storage.
-- **interceptor** depends on token-parsing for extracting auth tokens from intercepted requests.
+- **interceptor** is standalone. It provides PureScript reference implementations of token extraction functions, used for testing. In production, the `ffi/interceptor.js` IIFE uses its own inline regex (no WASM dependency, since MAIN-world scripts cannot import external modules).
 - **token-parsing** and **serialization** are leaf components. They wrap WASM exports and depend on nothing else in the workspace.
 
 ### Two-World Content Script Architecture
@@ -94,8 +93,8 @@ Pure message types matching the protobuf schema. Defines `BrowserRequest`, `Exte
 | `ResponseMessage(..)` | `newtype ResponseMessage { id :: String, payload :: Maybe String }` | Response to a BrowserRequest |
 | `KeepaliveMessage` | `data KeepaliveMessage` | Heartbeat signal (presence = signal) |
 | `HotReloadMessage(..)` | `newtype HotReloadMessage { files :: Array String }` | File change notification |
-| `NewEmailMessage(..)` | `newtype NewEmailMessage { email :: Maybe EmailData }` | New email from content script |
-| `EmailData(..)` | `newtype EmailData { subject :: Maybe String, sender :: Maybe String, bodyPreview :: Maybe String }` | Extracted email metadata |
+| `NewEmailMessage(..)` | `newtype NewEmailMessage { email :: Maybe EmailData }` | New email from content script (protocol placeholder, no implementation yet) |
+| `EmailData(..)` | `newtype EmailData { subject :: Maybe String, sender :: Maybe String, bodyPreview :: Maybe String }` | Extracted email metadata (protocol placeholder) |
 | `TokenMessage(..)` | `newtype TokenMessage { platform :: String, tokenType :: String, token :: String, url :: Maybe String, timestamp :: Timestamp }` | Captured auth token |
 | `Timestamp(..)` | `newtype Timestamp Int` | Unix-epoch milliseconds (newtype wrapper around Int) |
 
@@ -167,7 +166,7 @@ XHR and fetch interception logic. The companion `ffi/interceptor.js` IIFE patche
 | `detectPlatform` | `String -> String` | PS-native platform detection |
 | `buildTokenEvent` | `String -> String -> String -> String -> String` | Build JSON token event detail |
 
-The PureScript module provides pure functions for token extraction, used for testing and reference. In production, the actual interception happens in the `ffi/interceptor.js` IIFE because MAIN-world scripts cannot import WASM or any external modules. The IIFE uses inline regex patterns that mirror the Rust implementations.
+The PureScript module provides pure functions for token extraction, used for testing and reference. In production, the actual interception happens in the `ffi/interceptor.js` IIFE because MAIN-world scripts cannot import WASM or any external modules. The IIFE uses inline regex patterns that mirror the Rust implementations. Extracted tokens are deduplicated with a 5-second TTL to prevent duplicate emissions from repeated requests to the same endpoint.
 
 ### token-parsing
 
@@ -253,7 +252,6 @@ browser-bridge/
 │   ├── interceptor.js              # MAIN world IIFE (patches XHR + fetch)
 │   └── bridge.js                   # ISOLATED world IIFE (forwards tokens via chrome.runtime)
 ├── templates/                      # Chrome Extension manifest template
-├── development/                    # Dev tools and utilities
 └── test/                           # Component and base tests
 ```
 
@@ -278,7 +276,7 @@ make build
 bun run output/Cli.Main/index.js
 ```
 
-The server listens on port 3456 by default (configurable with `--port`).
+The server listens on port 3456.
 
 ### Testing
 

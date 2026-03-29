@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package browser_bridge;
 
-// A request from the MCP server to the browser extension.
+// A request from the desktop server to the browser extension.
 message BrowserRequest {
   string id = 1;
   string action = 2;

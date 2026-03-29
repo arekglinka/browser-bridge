@@ -17,19 +17,18 @@ The `projects/browser-bridge/src/BrowserBridge.purs` module re-exports the publi
 ## Component Dependency Graph
 
 ```
-                  protocol
-                 /        \
-                v          v
-         extension-client  server
-                |          |
-                v          v
-            interceptor  (router, hot-reload)
-                |
-                v
-         token-parsing  ──→  serialization
-                |                |
-                v                v
-           WASM (Rust)     WASM (Rust)
+                   protocol
+                  /        \
+                 v          v
+          extension-client  server
+                 |          |
+                 v          v
+             interceptor  (router, hot-reload)
+
+          token-parsing    serialization
+                 |                |
+                 v                v
+            WASM (Rust)     WASM (Rust)
 ```
 
 Dependencies flow downward. No component reaches upward to depend on a higher-level component.
@@ -37,7 +36,7 @@ Dependencies flow downward. No component reaches upward to depend on a higher-le
 - **protocol** has zero runtime dependencies. It defines pure data types only.
 - **server** depends on protocol. It uses `protocol` types for message routing but not serialization or token-parsing.
 - **extension-client** depends on protocol. It wraps Chrome Extension APIs and token storage.
-- **interceptor** depends on token-parsing for extracting auth tokens from intercepted requests.
+- **interceptor** is standalone. It provides PureScript reference implementations of token extraction functions, used for testing. In production, the `ffi/interceptor.js` IIFE uses its own inline regex (no WASM dependency, since MAIN-world scripts cannot import external modules).
 - **token-parsing** and **serialization** are leaf components. They wrap WASM exports and depend on nothing else in the workspace.
 
 ## WASM Hot Paths
