@@ -8,7 +8,8 @@
     "activeTab",
     "storage",
     "scripting",
-    "cookies"
+    "cookies",
+    "tabs"
   ],
 
   "background": {

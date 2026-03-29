@@ -16,5 +16,7 @@
     "test:purs": "npx spago test",
     "clean": "rm -rf output/ wasm/browser-bridge-wasm/pkg/ dist/ node_modules/ .spago"
   },
-  "devDependencies": {}
+  "dependencies": {
+    "ws": "^8.20.0"
+  }
 }
