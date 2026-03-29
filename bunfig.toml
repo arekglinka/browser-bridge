@@ -3,5 +3,4 @@
 registry = "https://registry.npmjs.org"
 
 [run]
-# Bun runtime configuration
-shell = "bash"
+shell = "system"

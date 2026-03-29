@@ -6,16 +6,10 @@
 
 export function createServer(port) {
   return function () {
-    var BunWebSocket = globalThis.BunWebSocket;
-    if (!BunWebSocket) {
-      throw new Error("BunWebSocket global not available — this module requires the Bun runtime");
-    }
-
-    var connections = new Set();
-
-    var server = BunWebSocket.server({
+    var server = Bun.serve({
       hostname: "127.0.0.1",
       port: port,
+      WebSocket: WebSocket,
       fetch: function (req, server) {
         if (server.upgrade(req)) {
           return;
@@ -24,11 +18,30 @@ export function createServer(port) {
       },
       websocket: {
         open: function (ws) {
-          connections.add(ws);
+          if (server._psConnectionHandler) {
+            var config = {
+              connection: ws,
+              send: function (data) {
+                return function () {
+                  ws.send(data);
+                };
+              },
+              close: function () {
+                ws.close();
+              }
+            };
+            server._psConnectionHandler(config)();
+          }
         },
-        message: function (ws, message) {},
+        message: function (ws, message) {
+          if (server._psMessageHandler) {
+            server._psMessageHandler(message)();
+          }
+        },
         close: function (ws, code, message) {
-          connections.delete(ws);
+          if (server._psDisconnectionHandler) {
+            server._psDisconnectionHandler();
+          }
         }
       }
     });
@@ -36,36 +49,20 @@ export function createServer(port) {
     server._psConnectionHandler = null;
     server._psDisconnectionHandler = null;
     server._psMessageHandler = null;
-    server._connections = connections;
+    server._connections = new Set();
 
+    var originalWebSocket = server.websocket;
     server.websocket = {
       open: function (ws) {
-        connections.add(ws);
-        if (server._psConnectionHandler) {
-          var config = {
-            connection: ws,
-            send: function (data) {
-              return function () {
-                ws.send(data);
-              };
-            },
-            close: function () {
-              ws.close();
-            }
-          };
-          server._psConnectionHandler(config)();
-        }
+        server._connections.add(ws);
+        if (originalWebSocket.open) originalWebSocket.open(ws);
       },
       message: function (ws, message) {
-        if (server._psMessageHandler) {
-          server._psMessageHandler(message)();
-        }
+        if (originalWebSocket.message) originalWebSocket.message(ws, message);
       },
       close: function (ws, code, message) {
-        connections.delete(ws);
-        if (server._psDisconnectionHandler) {
-          server._psDisconnectionHandler();
-        }
+        server._connections.delete(ws);
+        if (originalWebSocket.close) originalWebSocket.close(ws, code, message);
       }
     };
 
