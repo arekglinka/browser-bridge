@@ -19,6 +19,7 @@ build-ffi: build-ps
 	mkdir -p $(DIST_DIR)
 	npx esbuild ffi/interceptor.js --bundle --format=iife --outfile=$(DIST_DIR)/interceptor.js
 	npx esbuild ffi/bridge.js --bundle --format=iife --outfile=$(DIST_DIR)/bridge.js
+	cp extension/manifest.json extension/background.js $(DIST_DIR)/
 
 # ── Composite / utility targets ──────────────────────────────────
 

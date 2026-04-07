@@ -1,4 +1,4 @@
-const WS_URL = "ws://localhost:3457";
+const WS_URL = "ws://localhost:3456";
 let ws = null;
 let reconnectTimer = null;
 
